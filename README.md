@@ -1,35 +1,60 @@
 <div align="center">
 
-<img src="docs/images/icon.png" width="88" alt="闪电全能下载图标">
+<img src="docs/images/icon.png" width="88" alt="闪电全能下载">
 
 # 闪电全能下载 · Windows 普通版
 
-下载直链、磁力、种子、网页媒体和视频合集。<br>
-已测试 **Windows 10 / Windows 11**，当前发布为 **x64 · 简体中文**。
+**用一个窗口管理文件、网盘和视频合集下载。**
 
-[下载最新版](https://github.com/cgeek-dev/shandian-download/releases/latest) · [构建说明](windows/README.md) · [更新记录](windows/CHANGELOG.md)
+已测试 Windows 10 / Windows 11 · x64 · 简体中文 · Chrome / Edge 扩展
+
+[下载最新版](https://github.com/cgeek-dev/shandian-download/releases/latest) · [Windows 更新记录](windows/CHANGELOG.md) · [构建说明](windows/README.md)
+
+<img src="docs/images/windows-queue.png" width="1000" alt="闪电全能下载的 Windows 下载界面，显示总速度曲线、直链任务、视频合集和暂停任务">
+
+<sub>Windows 0.2.15 · 下载队列，使用演示任务</sub>
 
 </div>
 
-## 下载与安装
+## 安装与更新
 
-发布页提供 **安装版** 和 **便携版**。安装版按界面提示安装。便携版完整解压后运行「闪电全能下载.exe」。如需接管浏览器下载，可按闪电的提示在 Chrome 或 Edge 中添加扩展。
-
-安装版可在「设置 → 关于」检查更新。发现新版后点「立即更新」，程序会下载安装包、校验并启动安装。便携版可从发布页获取新版。
-
-## 主要功能
-
-| 场景 | 可用操作 |
+| 版本 | 怎么用 |
 | --- | --- |
-| 文件下载 | 添加 HTTP/HTTPS 直链、磁力、种子和 ed2k 任务，查看进度、暂停和继续。 |
-| 视频与合集 | 支持 YouTube、哔哩哔哩等站点，可选择分集。来源支持时可下载和处理字幕。 |
-| 网页资源 | Chrome 和 Edge 扩展支持接管下载、查找音视频与字幕、侦测正在播放的资源。 |
-| 网盘和文档附件 | 在支持的网页选择文件后下载，实际可用操作取决于站点和账号权限。 |
-| 文件抽屉 | 展开查看分集或文件进度。支持多选、框选和对选中项执行可用的字幕或复制操作。 |
-| AI 工具 | 本机 MCP 提供新建下载、查进度、暂停和继续。配置入口在「设置 → AI 工具」。 |
+| **安装版** | 运行发布页的 `setup.exe`。安装后在「设置 → 关于」可检查和安装更新，发现新版时右下角也会提示。 |
+| **便携版** | 完整解压 ZIP，再运行「闪电全能下载.exe」。从发布页获取新版，包内附有清理本机闪电数据的工具。 |
+| **浏览器扩展** | 在「设置 → 浏览器扩展」打开随包的扩展目录，按提示在 Chrome 或 Edge 加载。 |
 
-## 源码
+## 能下载什么
 
-Windows 普通版使用 Tauri 和 WebView2，下载内核为 Gopeed，视频站下载使用 yt-dlp。Windows 源码位于 `windows/`。
+| 来源 | 使用方式 |
+| --- | --- |
+| **文件和种子** | 粘贴 HTTP/HTTPS、磁力、ed2k 等链接，也可以添加种子文件。下载中可看速度和分文件进度，按需暂停或继续。 |
+| **视频和合集** | 支持 YouTube、哔哩哔哩、抖音、小红书、快手、微博、西瓜视频、Vimeo、X、新片场等来源。YouTube 和哔哩哔哩可选分集，支持的资源可下载字幕。 |
+| **素材和文档** | Pixabay、爱给可在扩展中查找素材。轻雀文档可批量选择附件，飞书原件下载依赖账号和文档权限。 |
+| **网盘文件** | 百度网盘、夸克、UC、阿里云盘、123 云盘、天翼、移动、迅雷和光鸭等网页提供扩展入口。支持的直链过期后可以重新取链续传。 |
+| **网页音视频** | 扩展可接管浏览器下载、提供悬停下载按钮、查找本页的链接、音视频和字幕。资源要到播放时才出现的，可以对当前标签页开启播放侦测。 |
 
-[已合并的 Windows PR](https://github.com/chenmozhe008/shandian-download/pull/2) · [GPL-3.0 许可证](LICENSE)
+具体下载入口和可用资源取决于站点、浏览器登录状态和文件权限。
+
+<details>
+<summary><strong>查看文件抽屉与合集分集</strong></summary>
+
+<br>
+
+点开合集可看每个文件的进度、大小和字幕。用 Ctrl、Shift 或框选选择文件，再从右键菜单执行可用的字幕或复制操作。
+
+<img src="docs/images/windows-collection.png" width="1000" alt="已完成合集的文件抽屉，每一集显示独立封面、字幕状态、进度和大小">
+
+<sub>Windows 0.2.15 · 合集文件抽屉，使用演示任务</sub>
+
+</details>
+
+## 用 AI 工具管理下载
+
+在「设置 → AI 工具」复制 Codex 或通用 JSON 配置，把本机闪电接到支持 MCP 的工具。连接后可提交下载、查看进度、暂停和继续。
+
+## 源码与许可证
+
+Windows 源码在 `windows/`，桌面界面使用 **Rust / Tauri / WebView2**，随包扩展使用 **JavaScript**。下载内核使用 Gopeed，视频来源使用 yt-dlp 等工具。本页右侧的语言比例按这个 fork 的 Windows 源码与构建脚本统计。
+
+[Windows 源码与构建](windows/README.md) · [已合并的 Windows PR](https://github.com/chenmozhe008/shandian-download/pull/2) · [GPL-3.0 许可证](LICENSE)

@@ -1,0 +1,6 @@
+# The fork's README presents Windows. Keep the inherited upstream files and
+# limit the GitHub language summary to the Windows edition and its build tools.
+* -linguist-detectable
+/windows/** !linguist-detectable
+/script/build_engine_windows.sh !linguist-detectable
+/script/package_windows.sh !linguist-detectable
