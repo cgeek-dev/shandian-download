@@ -6,11 +6,11 @@
 
 **用一个窗口管理文件、网盘和视频合集下载。**
 
-已测试 Windows 10 / Windows 11 · x64 · 简体中文 · Chrome / Edge 扩展
+**[下载 Windows 版](https://github.com/cgeek-dev/shandian-download/releases/latest)**　·　[安装与更新](#安装与更新)　·　[版本记录](windows/CHANGELOG.md)
 
-[下载最新版](https://github.com/cgeek-dev/shandian-download/releases/latest) · [Windows 更新记录](windows/CHANGELOG.md) · [构建说明](windows/README.md)
+<sub>已测试 Windows 10 / 11（x64） · 简体中文 · Chrome / Edge 扩展</sub>
 
-<img src="docs/images/windows-queue.png" width="1000" alt="闪电全能下载的 Windows 下载界面，显示总速度曲线、直链任务、视频合集和暂停任务">
+<img src="docs/images/windows-queue.png" width="1000" alt="浅色 Windows 下载界面，显示速度曲线、YouTube 合集、哔哩哔哩、百度网盘、Pixabay 和爱给任务">
 
 <sub>Windows 0.2.15 · 下载队列，使用演示任务</sub>
 
@@ -55,6 +55,6 @@
 
 ## 源码与许可证
 
-Windows 源码在 `windows/`，桌面界面使用 **Rust / Tauri / WebView2**，随包扩展使用 **JavaScript**。下载内核使用 Gopeed，视频来源使用 yt-dlp 等工具。本页右侧的语言比例按这个 fork 的 Windows 源码与构建脚本统计。
+Windows 源码在 `windows/`。桌面程序使用 **Rust / Tauri / WebView2**，随包扩展使用 **JavaScript**。下载内核使用 Gopeed，视频来源使用 yt-dlp 等工具。
 
 [Windows 源码与构建](windows/README.md) · [已合并的 Windows PR](https://github.com/chenmozhe008/shandian-download/pull/2) · [GPL-3.0 许可证](LICENSE)
