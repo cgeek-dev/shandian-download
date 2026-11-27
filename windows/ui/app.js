@@ -1292,15 +1292,15 @@ function downloadEmptyMarkup(watchClipboard) {
     <li>直链</li><li>磁力</li><li>种子</li>
     <li title="支持合集选集和可用字幕">哔哩哔哩</li>
     <li title="支持合集选集和可用字幕">YouTube</li>
-    <li>GitHub</li><li>Hugging Face</li><li>Vimeo</li><li>Pixabay</li>
+    <li>Vimeo</li><li>Facebook</li><li>Instagram</li><li>X</li><li>抖音</li>
+    <li>小红书</li><li>微信视频号</li><li>快手</li><li>微博</li><li>新片场</li>
+    <li>GitHub</li><li>Hugging Face</li>
     <li title="粘贴百度网盘分享链接">百度分享</li>
     <li title="在夸克、阿里云盘、UC、123 云盘等网页用扩展选择文件">扩展选文件</li>
-    <li>网页音视频</li>
-    <li title="通过扩展查找网页提供的 VTT、SRT 等字幕文件">字幕文件</li>
     <li title="关联 PikPak 后可离线中转">PikPak 离线</li>
-    <li>爱给</li><li>轻雀文档</li><li>飞书文档</li><li>抖音</li>
-    <li>小红书</li><li>微信视频号</li><li>快手</li><li>微博</li>
-    <li>新片场</li><li>ed2k</li>
+    <li>网页音视频</li><li>Pixabay</li><li>爱给</li>
+    <li title="通过扩展查找网页提供的 VTT、SRT 等字幕文件">字幕文件</li>
+    <li>轻雀文档</li><li>飞书文档</li><li>ed2k</li>
   </ul>
 </section>`;
 }
@@ -9856,7 +9856,7 @@ refreshExt();
 // 启动时静默查一次更新，有新版只 toast 提一声
 if (invoke) {
   setTimeout(() => checkUpdate(true), 8000);
-  setInterval(() => checkUpdate(true), 60 * 60 * 1000);
+  setInterval(() => checkUpdate(true), 5 * 60 * 1000);
 }
 loadRpcInfo();
 // 按 state.view 切一次面板：只 renderAll() 的话，改动初始视图时界面不会跟着变

@@ -25,7 +25,6 @@ const ATOM_FEED: &str = "https://github.com/cgeek-dev/shandian-download/releases
 static API_RETRY_AT: AtomicU64 = AtomicU64::new(0);
 const CURRENT: &str = env!("CARGO_PKG_VERSION");
 const EDITION: &str = "plain";
-const DAY: u64 = 24 * 60 * 60;
 const MAX_INSTALLER: u64 = 512 * 1024 * 1024;
 static INSTALLING: AtomicBool = AtomicBool::new(false);
 
@@ -379,13 +378,13 @@ pub async fn update_check(
         .await;
     let base = state.base.clone();
     let mut cache = load(&base);
-    if force || cache.checked_at == 0 || now().saturating_sub(cache.checked_at) >= DAY {
-        cache.latest = tauri::async_runtime::spawn_blocking(fetch_latest)
-            .await
-            .map_err(|_| "检查更新未完成")??;
-        cache.checked_at = now();
-        cache.checked_for = Some(CURRENT.into());
-    }
+    // Frequent automatic checks use the public feed instead of the API quota.
+    let fetch = if force { fetch_latest } else { fetch_from_atom };
+    cache.latest = tauri::async_runtime::spawn_blocking(fetch)
+        .await
+        .map_err(|_| "检查更新未完成")??;
+    cache.checked_at = now();
+    cache.checked_for = Some(CURRENT.into());
     let release = cache
         .latest
         .as_ref()
