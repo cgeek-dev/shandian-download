@@ -1,4 +1,4 @@
-importScripts("network-capture.js", "site-download.js", "audio-preview.js", "qingque.js", "huggingface.js");
+importScripts("network-capture.js", "site-download.js", "audio-preview.js", "qingque.js", "huggingface.js", "source-labels.js");
 
 // 闪电全能下载浏览器扩展：把浏览器里的下载交给本机的闪电全能下载（127.0.0.1:6800）。
 // App 没开时什么都不拦，浏览器照常下载；App 只认本扩展的来源（manifest 里的 key 固定了扩展 ID），不需要填密钥。
@@ -351,8 +351,9 @@ async function downloadVideoInTab(tab, requireVideo = false, quality = "") {
     if (!result.ok) throw new Error(result.error || "视频号下载失败，请重试。");
     return true;
   }
-  const pageHost = new URL(tab.url).hostname;
-  const knownSite = VIDEO_PAGE_HOSTS.test(pageHost);
+  const page = new URL(tab.url);
+  const pageHost = page.hostname;
+  const knownSite = VIDEO_PAGE_HOSTS.test(pageHost) || ShSources.socialVideo(page);
   // requireVideo：用户明确要页面里的视频，不交页面地址。已知视频站也没必要先去页面里翻 <video>（那只是 CDN 的一段）
   if (!requireVideo && knownSite && !PICK_FROM_PAGE.test(pageHost)) {
     return sendToApp(videoPageURL(tab.url), tab.url, undefined, tab.id);

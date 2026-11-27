@@ -1981,6 +1981,8 @@ fn site_for_host(host: &str) -> Option<&'static str> {
         (&["weibo.com", "weibo.cn"], "微博"),
         (&["ixigua.com"], "西瓜视频"),
         (&["vimeo.com"], "Vimeo"),
+        (&["facebook.com", "fb.watch"], "Facebook"),
+        (&["instagram.com"], "Instagram"),
         (&["x.com", "twitter.com"], "X"),
         (&["xinpianchang.com"], "新片场"),
         (&["movie.douban.com"], "豆瓣"),

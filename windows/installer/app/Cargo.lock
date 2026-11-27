@@ -2800,7 +2800,7 @@ dependencies = [
 
 [[package]]
 name = "shandian-setup"
-version = "0.2.21"
+version = "0.2.22"
 dependencies = [
  "serde",
  "serde_json",

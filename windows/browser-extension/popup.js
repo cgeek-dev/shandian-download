@@ -578,7 +578,7 @@ async function main() {
   try { url = new URL(tab?.url || ""); } catch (_) {}
   const host = url?.hostname || "";
   const onChannelPage = host === "channels.weixin.qq.com" && url.pathname.startsWith("/finder-preview/pages/sph");
-  const onVideoSite = VIDEO_SITES.some((d) => host === d || host.endsWith("." + d)) ||
+  const onVideoSite = VIDEO_SITES.some((d) => host === d || host.endsWith("." + d)) || ShSources.socialVideo(url) ||
     (host === "movie.douban.com" && /^\/trailer\/\d+\/?$/.test(url.pathname)) || onChannelPage;
   const isWebPage = url && ["http:", "https:"].includes(url.protocol);
   const yuanbao = host === "yuanbao.tencent.com";
