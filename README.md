@@ -8,7 +8,7 @@
 
 [![Windows 版 0.2.15](https://img.shields.io/badge/Windows%20%E7%89%88-0.2.15-C7771A)](https://github.com/cgeek-dev/shandian-download/releases/tag/v0.2.15-windows)
 [![实测 Windows 10 和 11](https://img.shields.io/badge/%E5%AE%9E%E6%B5%8B-Windows%2010%20%2F%2011%20x64-2563A6)](windows/README.md#已验证环境)
-[![浏览器扩展支持 Chrome 和 Edge](https://img.shields.io/badge/%E6%B5%8F%E8%A7%88%E5%99%A8%E6%89%A9%E5%B1%95-Chrome%20%2F%20Edge-327474)](#安装与更新)
+[![随包扩展支持 Chrome 和 Edge](https://img.shields.io/badge/%E9%9A%8F%E5%8C%85%E6%89%A9%E5%B1%95-Chrome%20%2F%20Edge-327474)](#安装与更新)
 [![界面语言为简体中文](https://img.shields.io/badge/%E7%95%8C%E9%9D%A2-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-566478)](windows/README.md#已验证环境)
 [![GPL-3.0 许可证](https://img.shields.io/badge/License-GPL--3.0-566478)](LICENSE)
 
@@ -41,7 +41,7 @@
 | --- | --- |
 | **安装版** | 运行发布页的 `setup.exe`。安装后在「设置 → 关于」可检查和安装更新，发现新版时右下角也会提示。 |
 | **便携版** | 完整解压 ZIP，再运行「闪电全能下载.exe」。从发布页获取新版，包内附有清理本机闪电数据的工具。 |
-| **浏览器扩展** | 在「设置 → 浏览器扩展」打开随包的扩展目录，按提示在 Chrome 或 Edge 加载。 |
+| **浏览器扩展** | 在「设置 → 浏览器扩展」打开随包目录，按提示在 Chrome 或 Edge 加载。Windows 只接入随包扩展，商店版无法连接。 |
 
 ## 能下载什么
 
