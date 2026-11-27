@@ -12,7 +12,7 @@
 [![界面语言为简体中文](https://img.shields.io/badge/%E7%95%8C%E9%9D%A2-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-566478)](windows/README.md#已验证环境)
 [![GPL-3.0 许可证](https://img.shields.io/badge/License-GPL--3.0-566478)](LICENSE)
 
-**[下载 Windows 版](https://github.com/cgeek-dev/shandian-download/releases/latest)**　·　[界面展示](#界面展示)　·　[字幕与播放](#字幕与播放)　·　[下载来源](#能下载什么)　·　[安装与更新](#安装与更新)　·　[版本记录](windows/CHANGELOG.md)
+**[下载 Windows 版](https://github.com/cgeek-dev/shandian-download/releases/latest)**　·　[下载 macOS 版](https://github.com/chenmozhe008/shandian-download/releases/latest)　·　[界面展示](#界面展示)　·　[字幕与播放](#字幕与播放)　·　[下载来源](#能下载什么)　·　[安装与更新](#安装与更新)　·　[版本记录](windows/CHANGELOG.md)
 
 </div>
 
