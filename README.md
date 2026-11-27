@@ -6,15 +6,34 @@
 
 **用一个窗口管理文件、网盘和视频合集下载。**
 
-**[下载 Windows 版](https://github.com/cgeek-dev/shandian-download/releases/latest)**　·　[安装与更新](#安装与更新)　·　[版本记录](windows/CHANGELOG.md)
+[![Windows 版 0.2.15](https://img.shields.io/badge/Windows%20%E7%89%88-0.2.15-C7771A)](https://github.com/cgeek-dev/shandian-download/releases/tag/v0.2.15-windows)
+[![实测 Windows 10 和 11](https://img.shields.io/badge/%E5%AE%9E%E6%B5%8B-Windows%2010%20%2F%2011%20x64-2563A6)](windows/README.md#已验证环境)
+[![浏览器扩展支持 Chrome 和 Edge](https://img.shields.io/badge/%E6%B5%8F%E8%A7%88%E5%99%A8%E6%89%A9%E5%B1%95-Chrome%20%2F%20Edge-327474)](#安装与更新)
+[![界面语言为简体中文](https://img.shields.io/badge/%E7%95%8C%E9%9D%A2-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-566478)](windows/README.md#已验证环境)
+[![GPL-3.0 许可证](https://img.shields.io/badge/License-GPL--3.0-566478)](LICENSE)
 
-<sub>已测试 Windows 10 / 11（x64） · 简体中文 · Chrome / Edge 扩展</sub>
-
-<img src="docs/images/windows-queue.png" width="1000" alt="浅色 Windows 下载界面，显示速度曲线、YouTube 合集、哔哩哔哩、百度网盘、Pixabay 和爱给任务">
-
-<sub>Windows 0.2.15 · 下载队列，使用演示任务</sub>
+**[下载 Windows 版](https://github.com/cgeek-dev/shandian-download/releases/latest)**　·　[界面展示](#界面展示)　·　[安装与更新](#安装与更新)　·　[版本记录](windows/CHANGELOG.md)
 
 </div>
+
+## 界面展示
+
+### 下载队列
+
+直链、网盘文件和视频合集在同一个窗口管理。任务卡片显示来源、进度和速度，支持暂停和继续。
+
+<p align="center">
+  <img src="docs/images/windows-queue.png" width="1000" alt="浅色 Windows 下载界面，显示速度曲线、YouTube 合集、哔哩哔哩、百度网盘、Pixabay 和爱给任务">
+</p>
+
+### 合集文件抽屉
+
+点开合集可看每个文件的封面、进度、大小和字幕。用 Ctrl、Shift 或框选选择多个文件，再从右键菜单执行可用操作。
+
+<p align="center">
+  <img src="docs/images/windows-collection.png" width="1000" alt="浅色 Windows 合集文件抽屉，每一集显示独立封面、字幕状态、进度和大小">
+  <br><sub>两张截图均使用演示任务</sub>
+</p>
 
 ## 安装与更新
 
@@ -35,19 +54,6 @@
 | **网页音视频** | 扩展可接管浏览器下载、提供悬停下载按钮、查找本页的链接、音视频和字幕。资源要到播放时才出现的，可以对当前标签页开启播放侦测。 |
 
 具体下载入口和可用资源取决于站点、浏览器登录状态和文件权限。
-
-<details>
-<summary><strong>查看文件抽屉与合集分集</strong></summary>
-
-<br>
-
-点开合集可看每个文件的进度、大小和字幕。用 Ctrl、Shift 或框选选择文件，再从右键菜单执行可用的字幕或复制操作。
-
-<img src="docs/images/windows-collection.png" width="1000" alt="已完成合集的文件抽屉，每一集显示独立封面、字幕状态、进度和大小">
-
-<sub>Windows 0.2.15 · 合集文件抽屉，使用演示任务</sub>
-
-</details>
 
 ## 用 AI 工具管理下载
 
