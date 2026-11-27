@@ -9875,6 +9875,22 @@ async function feedbackInfo() {
   return `${report}客户端：${edition}\n`;
 }
 $("btn-open-logs")?.addEventListener("click", () => invoke("open_logs_dir").catch(e => toast(String(e))));
+$("btn-export-feedback-log")?.addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  if (button.disabled) return;
+  button.disabled = true;
+  button.textContent = "正在导出…";
+  try {
+    const path = await invoke("export_recent_logs");
+    toast("脱敏日志已保存到「下载」文件夹");
+    await invoke("reveal_path", { path }).catch(() => {});
+  } catch (error) {
+    toast(String(error));
+  } finally {
+    button.disabled = false;
+    button.textContent = "导出脱敏日志";
+  }
+});
 $("btn-copy-diagnostics")?.addEventListener("click", async () => {
   try { toast(await copyText(await feedbackInfo()) ? "诊断信息已复制，可粘贴到 GitHub Issue；日志可按需附加" : "复制失败"); }
   catch (e) { toast(String(e)); }

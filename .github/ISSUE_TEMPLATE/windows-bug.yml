@@ -2,6 +2,9 @@ name: Windows 版问题反馈 / Windows Bug Report
 description: 报告 Windows 客户端或随包浏览器扩展的问题
 labels: ["bug", "windows"]
 body:
+  - type: markdown
+    attributes:
+      value: 想建议新功能、改进体验或适配新网站？请使用 [功能建议](https://github.com/cgeek-dev/shandian-download/issues/new?template=feature-request.yml)。
   - type: dropdown
     id: area
     attributes:
@@ -50,9 +53,8 @@ body:
     attributes:
       label: 上传截图、录屏或日志（可选） / Attachments
       description: |
-        复现后，在「设置 → 关于 → 打开日志目录」找到 `app.log`。如果 App 打不开，可在资源管理器地址栏打开 `%LOCALAPPDATA%\com.shandian.windows\logs`。
-        复制问题发生前后几分钟的日志到 `.txt` 后上传。刚轮换的日志可能在 `app.1.log`。也可以把日志片段直接粘贴到上面的诊断信息框。
-        窗口显示异常可附包含通知卡片和主窗口的截图或短录屏。提交前请遮掉私有链接、提取码、账号、Token 和个人路径。
+        复现后，在「设置 → 关于 → 问题反馈」点「导出脱敏日志」，然后上传自动生成的 `.txt` 文件。文件只包含最近 5 分钟的排错信息。
+        App 打不开或找不到按钮时，写下故障时间即可，截图或短录屏可选。窗口异常可以截下主窗口和通知卡片。
     validations:
       required: false
-      accept: ".png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.txt,.log"
+      accept: ".png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.txt"

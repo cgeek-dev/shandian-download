@@ -6,7 +6,7 @@
 
 **下载文件、网盘资源和视频合集，下载后还能处理字幕和试听音频。**
 
-[![Windows 版 0.2.20](https://img.shields.io/badge/Windows%20%E7%89%88-0.2.20-C7771A)](https://github.com/cgeek-dev/shandian-download/releases/tag/v0.2.20-windows)
+[![Windows 版 0.2.21](https://img.shields.io/badge/Windows%20%E7%89%88-0.2.21-C7771A)](https://github.com/cgeek-dev/shandian-download/releases/tag/v0.2.21-windows)
 [![实测 Windows 10 和 11](https://img.shields.io/badge/%E5%AE%9E%E6%B5%8B-Windows%2010%20%2F%2011%20x64-2563A6)](windows/README.md#已验证环境)
 [![随包扩展支持 Chrome 和 Edge](https://img.shields.io/badge/%E9%9A%8F%E5%8C%85%E6%89%A9%E5%B1%95-Chrome%20%2F%20Edge-327474)](#安装与更新)
 [![界面语言为简体中文](https://img.shields.io/badge/%E7%95%8C%E9%9D%A2-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-566478)](windows/README.md#已验证环境)

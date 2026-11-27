@@ -1,6 +1,6 @@
 name: 功能建议 / Feature Request
 description: 提出新功能想法、体验改进或新网站适配建议
-labels: ["enhancement"]
+labels: ["enhancement", "windows"]
 body:
   - type: dropdown
     id: platform
