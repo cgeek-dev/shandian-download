@@ -12,7 +12,7 @@
 [![界面语言为简体中文](https://img.shields.io/badge/%E7%95%8C%E9%9D%A2-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-566478)](windows/README.md#已验证环境)
 [![GPL-3.0 许可证](https://img.shields.io/badge/License-GPL--3.0-566478)](LICENSE)
 
-**[下载 Windows 版](https://github.com/cgeek-dev/shandian-download/releases/latest)**　·　[下载 macOS 版](https://github.com/chenmozhe008/shandian-download/releases/latest)　·　[界面展示](#界面展示)　·　[字幕与播放](#字幕与播放)　·　[下载来源](#能下载什么)　·　[安装与更新](#安装与更新)　·　[版本记录](windows/CHANGELOG.md)
+**[下载 Windows 版](https://github.com/cgeek-dev/shandian-download/releases/latest)**　·　[下载 macOS 版](https://github.com/chenmozhe008/shandian-download/releases/latest)　·　[界面展示](#界面展示)　·　[播放与字幕](#播放与字幕)　·　[下载来源](#能下载什么)　·　[安装与更新](#安装与更新)　·　[版本记录](windows/CHANGELOG.md)
 
 </div>
 
@@ -35,7 +35,7 @@
   <br><sub>两张截图均使用演示任务</sub>
 </p>
 
-## 字幕与播放
+## 播放与字幕
 
 | 功能 | 怎么用 |
 | --- | --- |
@@ -45,16 +45,16 @@
 | **本地音频试听** | 在已完成任务的文件抽屉点播放，查看波形、当前进度和总时长，拖动进度定位。支持单曲播放、单曲循环、顺序播放、列表循环与随机播放。 |
 | **视频播放** | 点击卡片或分集的播放按钮，用本机播放器打开已下载的视频。支持的种子或磁力任务也能边下边播。 |
 
-### 字幕样式与预览
-
-<p align="center">
-  <img src="docs/images/windows-subtitle-style.png" width="530" alt="Windows 字幕样式窗口，在视频封面上预览中英双语字幕，并调整字体、字号、颜色、阴影和位置">
-</p>
-
 ### 文件抽屉内试听
 
 <p align="center">
   <img src="docs/images/windows-audio-playback.png" width="1000" alt="Windows 的音频文件抽屉正在试听本地音频，显示波形、进度、总时长和播放模式">
+</p>
+
+### 字幕样式与预览
+
+<p align="center">
+  <img src="docs/images/windows-subtitle-style.png" width="530" alt="Windows 字幕样式窗口，在视频封面上预览中英双语字幕，并调整字体、字号、颜色、阴影和位置">
   <br><sub>截图使用演示任务</sub>
 </p>
 
