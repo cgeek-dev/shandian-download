@@ -1,0 +1,29 @@
+name: Windows 版问题反馈 / Windows Bug Report
+description: 报告 Windows 客户端或随包浏览器扩展的问题
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: 应用版本 / App Version
+      placeholder: 例如 0.2.15
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 使用环境 / Environment
+      placeholder: 例如 Windows 11 x64、安装版、Edge
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述与复现步骤 / Description & Steps
+      description: 请写下你做了什么、实际发生了什么，以及期望的结果。
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 截图或脱敏日志（可选）/ Screenshots or Logs

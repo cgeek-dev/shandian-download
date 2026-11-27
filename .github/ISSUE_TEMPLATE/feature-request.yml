@@ -7,8 +7,8 @@ body:
     attributes:
       label: 适用平台 / Platform
       options:
-        - macOS
-        - 通用 / 浏览器扩展
+        - Windows 客户端
+        - Chrome / Edge 扩展
     validations:
       required: true
   - type: textarea
