@@ -9567,9 +9567,10 @@ $("btn-linkswift")?.addEventListener("click", () => {
 });
 
 // 设置页「GitHub 仓库」：交给系统默认浏览器打开（Rust 侧 open_url 只放行 http/https）
+const aboutRepositoryUrl = "https://" + $("about-repo").textContent.trim();
 $("btn-open-repo")?.addEventListener("click", () => {
   if (!invoke) return;
-  invoke("open_url", { url: "https://github.com/chenmozhe008/shandian-download" })
+  invoke("open_url", { url: aboutRepositoryUrl })
     .catch((e) => toast("打不开仓库：" + e));
 });
 
@@ -9803,8 +9804,11 @@ $("btn-copy-diagnostics")?.addEventListener("click", async () => {
 $("btn-report-issue")?.addEventListener("click", async () => {
   try {
     const report = await feedbackInfo();
-    const issue = new URL("https://github.com/chenmozhe008/shandian-download/issues/new");
-    issue.searchParams.set("body", `### 问题描述\n\n### 复现步骤\n1. \n\n### 预期与实际结果\n\n### 环境信息\n${report}\n### 日志或截图\n如需附加日志，可在设置中打开日志目录后自行选择。\n`);
+    const issue = new URL(aboutRepositoryUrl + "/issues/new");
+    issue.searchParams.set("template", "windows-bug.yml");
+    const version = $("about-ver").textContent.trim();
+    if (/^v?\d+\.\d+\.\d+$/.test(version)) issue.searchParams.set("version", version.replace(/^v/, ""));
+    issue.searchParams.set("diagnostics", report);
     await invoke("open_url", { url: issue.toString() });
   } catch (e) { toast(String(e)); }
 });
