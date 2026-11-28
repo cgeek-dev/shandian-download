@@ -1,6 +1,6 @@
 [package]
 name = "shandian-setup"
-version = "0.2.28"
+version = "0.2.29"
 edition = "2021"
 description = "闪电全能下载 安装与卸载"
 
