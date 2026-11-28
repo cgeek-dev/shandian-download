@@ -27,6 +27,7 @@ mod dialog;
 mod engine;
 mod float;
 mod gateway;
+mod download_handoff;
 mod ghmirror;
 mod links;
 mod baidu;
@@ -35,6 +36,7 @@ mod feishu_setup;
 mod baidu_cleanup;
 mod baidu_setup;
 mod migrate;
+#[allow(unexpected_cfgs)]
 mod mcp;
 mod pikpak;
 mod thunder;
@@ -477,6 +479,7 @@ fn main() {
             engine::subtitle_look,
             engine::subtitle_fetch,
             engine::system_fonts,
+            theme::pick_screen_color,
             engine::subtitle_restyle,
             engine::ollama_models,
             engine::set_queue_order,
@@ -506,6 +509,7 @@ fn main() {
             commands::reveal_path,
             commands::quit_app,
             commands::open_logs_dir,
+            download_handoff::cancel_browser_handoff,
             commands::export_recent_logs,
             commands::diagnostic_info,
             app_log::log_ui_event,

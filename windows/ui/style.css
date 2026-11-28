@@ -9,7 +9,7 @@
   --accent-s: 100%;
   --on-dark: #201703; /* 深色主题里强调色很亮，文字用近黑才看得清 */
 
-  --tint: hsl(var(--accent-h) var(--accent-s) 52%);
+  --tint: var(--accent-color, hsl(var(--accent-h) var(--accent-s) 52%));
   --tint-press: hsl(var(--accent-h) var(--accent-s) 46%);
   /* 强调色自身的渐变两端：上亮一点、下暗一点，和参考图那种「同色系渐变」一致 */
   /* 参考图实测：上沿 hsl(37 82% 58%)、中段 52%，所以浅色也带一层很轻的渐变 */
@@ -53,7 +53,7 @@
 }
 
 :root[data-theme="dark"] {
-  --tint: hsl(var(--accent-h) var(--accent-s) 52%);
+  --tint: var(--accent-color, hsl(var(--accent-h) var(--accent-s) 52%));
   --tint-press: hsl(var(--accent-h) var(--accent-s) 45%);
   --tint-hi: hsl(var(--accent-h) var(--accent-s) 57%);
   --tint-lo: hsl(var(--accent-h) var(--accent-s) 45%);
@@ -97,10 +97,12 @@
 }
 :root[data-accent="amber"] { --accent-h: 37; --accent-s: 82%; --on-dark: #201703; }
 :root[data-accent="blue"] { --accent-h: 212; --accent-s: 92%; --on-dark: #fff; }
-:root[data-accent="teal"] { --accent-h: 178; --accent-s: 62%; --on-dark: #04201d; }
-:root[data-accent="green"] { --accent-h: 148; --accent-s: 60%; --on-dark: #06210f; }
-:root[data-accent="purple"] { --accent-h: 266; --accent-s: 70%; --on-dark: #fff; }
-:root[data-accent="rose"] { --accent-h: 342; --accent-s: 76%; --on-dark: #fff; }
+:root[data-accent="qinglian"] { --accent-h: 266.1972; --accent-s: 29.9578%; --accent-color: #72539A; --on-dark: #fff; }
+:root[data-accent="shilv"] { --accent-h: 137.2881; --accent-s: 27.1889%; --accent-color: #4F8A60; --on-dark: #fff; }
+:root[data-accent="songlv"] { --accent-h: 156.2264; --accent-s: 30.2857%; --accent-color: #3D725D; --on-dark: #fff; }
+:root[data-accent="tongqing"] { --accent-h: 183.0380; --accent-s: 43.1694%; --accent-color: #347F83; --on-dark: #fff; }
+:root[data-accent="baolan"] { --accent-h: 220.3636; --accent-s: 52.3810%; --accent-color: #3256A0; --on-dark: #fff; }
+:root[data-accent="cobalt"] { --accent-h: 229.85; --accent-s: 82.04%; --on-dark: #fff; }
 :root[data-accent="indigo"] { --accent-h: 232; --accent-s: 62%; --on-dark: #fff; }
 :root[data-accent="graphite"] { --accent-h: 220; --accent-s: 8%; --on-dark: #fff; }
 
@@ -842,11 +844,11 @@ body.dialog-window #nd-text { flex: 1; min-height: 120px; }
 
 /* 选中：仅用底色区分 */
 .task.sel, .fd-row.fd-selected {
-  background: color-mix(in srgb, var(--tint) 16%, transparent);
+  background: color-mix(in srgb, var(--tint) 12%, transparent);
   box-shadow: none;
 }
 .task.sel:hover, .fd-row.fd-selected:hover {
-  background: color-mix(in srgb, var(--tint) 21%, transparent);
+  background: color-mix(in srgb, var(--tint) 16%, transparent);
 }
 
 .thumb {
@@ -1125,7 +1127,7 @@ body.dialog-window #nd-text { flex: 1; min-height: 120px; }
   width: calc(100% - 1.2px);
   height: calc(100% - 1.2px);
   fill: none;
-  stroke: color-mix(in srgb, var(--tint) 40%, transparent);
+  stroke: color-mix(in srgb, var(--tint) 20%, transparent);
   stroke-width: 1.2px;
   stroke-dasharray: 7px 6px;
 }
@@ -1175,6 +1177,10 @@ body.dialog-window #nd-text { flex: 1; min-height: 120px; }
   font-weight: 400;
   line-height: 1.35;
   white-space: nowrap;
+}
+
+.download-empty-sources li:lang(zh-CN) {
+  padding-block: 4px 2px;
 }
 
 .kind { font-size: 12px; color: var(--sub); white-space: nowrap; }
@@ -1968,6 +1974,9 @@ mark.hl {
   box-shadow: 0 12px 32px rgba(0, 0, 0, .22);
 }
 
+#ctx-menu:not([data-owner="sort"], .audio-mode-menu) { min-width: 148px; }
+#ctx-menu:not([data-owner="sort"], .audio-mode-menu) > .ctx-item { padding-inline: 9px; }
+
 .ctx-item {
   display: block;
   width: 100%;
@@ -1991,7 +2000,7 @@ mark.hl {
 .ctx-sep { height: 1px; background: var(--line); margin: 4px 8px; }
 
 /* ---------- 强调色色点（设置页） ---------- */
-.accents { display: flex; align-items: center; gap: 8px; position: relative; }
+.accents { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; position: relative; }
 .acc {
   flex: none;
   width: 22px;
@@ -2005,10 +2014,12 @@ mark.hl {
 }
 .acc[data-accent="amber"] { background: hsl(36 100% 55%); }
 .acc[data-accent="blue"] { background: hsl(212 92% 58%); }
-.acc[data-accent="teal"] { background: hsl(178 62% 46%); }
-.acc[data-accent="green"] { background: hsl(148 60% 44%); }
-.acc[data-accent="purple"] { background: hsl(266 70% 63%); }
-.acc[data-accent="rose"] { background: hsl(342 76% 60%); }
+.acc[data-accent="qinglian"] { background: #72539A; }
+.acc[data-accent="shilv"] { background: #4F8A60; }
+.acc[data-accent="songlv"] { background: #3D725D; }
+.acc[data-accent="tongqing"] { background: #347F83; }
+.acc[data-accent="baolan"] { background: #3256A0; }
+.acc[data-accent="cobalt"] { background: #2042E9; }
 .acc[data-accent="indigo"] { background: hsl(232 62% 60%); }
 .acc[data-accent="graphite"] { background: hsl(220 8% 55%); }
 .acc.on { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12), 0 0 0 2px var(--window), 0 0 0 3.5px var(--tint); }
@@ -2044,8 +2055,8 @@ body.sb-collapsed .engine { display: none !important; }
 }
 .acc-custom::after { transform: translate(-50%, -50%) rotate(90deg); }
 /* 选中自定义时，圆点直接显示挑的颜色，加号让位 */
-.acc-custom.on::before,
-.acc-custom.on::after { display: none; }
+.acc-custom.has-color::before,
+.acc-custom.has-color::after { display: none; }
 
 /* ---------- 自定义取色面板 ---------- */
 /* 取色面板是通用控件：设置页的强调色和确认框里的字幕颜色都用它，
@@ -2244,6 +2255,8 @@ body.sb-collapsed .engine { display: none !important; }
 .fd-episode-cover .ic { width: 15px; height: 15px; }
 .fd-row .p.file-missing { color: var(--failed); }
 .ctx-menu[data-owner="drawer-files"] { z-index: 61; }
+.ctx-menu.audio-mode-menu { min-width: 0; width: max-content; }
+.audio-mode-menu .sort-mark { margin-left: 4px; }
 .fd-cols { position: sticky; top: 0; z-index: 1; background: var(--raised, #2a2a2c); font-size: 12px; color: var(--sub); padding-bottom: 6px; border-bottom: 1px solid var(--line); }
 .files-drawer:is(.collection-files, .media-files) .fd-cols span:nth-child(2) { grid-column: 3; }
 .fd-cols span + span, .fd-row .p, .fd-row .s { text-align: right; }

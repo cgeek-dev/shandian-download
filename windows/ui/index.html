@@ -11,6 +11,8 @@
   try {
     // 强调色先读缓存，避免打开瞬间是琥珀再跳成别的色
     var acc = localStorage.getItem("sd.accent") || "amber";
+    var replacement = { teal: "tongqing", green: "shilv", purple: "qinglian", rose: "qinglian" }[acc];
+    if (typeof replacement === "string") { acc = replacement; localStorage.setItem("sd.accent", acc); }
     var vars = localStorage.getItem("sd.accentVars");
     if (acc === "custom" && vars) {
       var v = JSON.parse(vars);
@@ -19,6 +21,7 @@
       el.style.setProperty("--accent-h", v.h);
       el.style.setProperty("--accent-s", v.s);
       el.style.setProperty("--on-dark", v.onDark);
+      if (v.hex) el.style.setProperty("--accent-color", v.hex);
     } else {
       document.documentElement.dataset.accent = acc;
     }
@@ -276,12 +279,14 @@
             <span class="set-path"></span>
             <div class="accents" id="accent-row">
               <button class="acc" data-accent="amber" title="琥珀"></button>
+              <button class="acc" data-accent="shilv" data-tip="石绿 #4F8A60" aria-label="石绿 #4F8A60"></button>
+              <button class="acc" data-accent="songlv" data-tip="松绿 #3D725D" aria-label="松绿 #3D725D"></button>
+              <button class="acc" data-accent="tongqing" data-tip="铜青 #347F83" aria-label="铜青 #347F83"></button>
               <button class="acc" data-accent="blue" title="蓝"></button>
-              <button class="acc" data-accent="teal" title="青"></button>
-              <button class="acc" data-accent="green" title="绿"></button>
-              <button class="acc" data-accent="purple" title="紫"></button>
-              <button class="acc" data-accent="rose" title="玫红"></button>
+              <button class="acc" data-accent="baolan" data-tip="宝蓝 #3256A0" aria-label="宝蓝 #3256A0"></button>
+              <button class="acc" data-accent="cobalt" title="钴蓝 #2042E9" aria-label="钴蓝 #2042E9"></button>
               <button class="acc" data-accent="indigo" title="靛蓝"></button>
+              <button class="acc" data-accent="qinglian" data-tip="青莲紫 #72539A" aria-label="青莲紫 #72539A"></button>
               <button class="acc" data-accent="graphite" title="石墨"></button>
               <button class="acc acc-custom" id="acc-custom-btn" title="自定义颜色"></button>
               <!-- 自定义取色面板：像系统色板那样一块二维色区——

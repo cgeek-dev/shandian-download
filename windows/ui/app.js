@@ -333,8 +333,9 @@ function showTip(el) {
   // 左右别贴边出界
   let x = r.left + r.width / 2 - tw / 2;
   x = Math.min(Math.max(6, x), window.innerWidth - tw - 6);
-  // 勾选框里行距小，提示贴近一点；其他地方留 14，免得挡住下面的按钮
-  let y = r.bottom + (el.closest(".grab-row") ? 8 : 14);
+  // 选项行和来源胶囊的间距较小，提示靠近一点。
+  const rowGap = el.closest(".grab-row") ? 8 : 14;
+  let y = r.bottom + (el.closest(".download-empty-sources") ? 8 : rowGap);
   if (y + th > window.innerHeight - 4) {
     y = r.top - th - 10;
     tipEl.classList.add("tip-up");
@@ -1289,18 +1290,20 @@ function downloadEmptyMarkup(watchClipboard) {
   <h2 id="download-empty-title">开始下载</h2>
   <p class="download-empty-hint">网页闪电按钮 · 扩展侦测 · ${linkHint} · 拖入种子</p>
   <ul class="download-empty-sources" aria-label="下载来源与入口">
-    <li>直链</li><li>磁力</li><li>种子</li>
-    <li title="支持合集选集和可用字幕">哔哩哔哩</li>
-    <li title="支持合集选集和可用字幕">YouTube</li>
-    <li>Vimeo</li><li>Facebook</li><li>Instagram</li><li>X</li><li>抖音</li>
-    <li>小红书</li><li>微信视频号</li><li>快手</li><li>微博</li><li>新片场</li>
-    <li>GitHub</li><li>Hugging Face</li>
-    <li title="粘贴百度网盘分享链接">百度分享</li>
-    <li title="在夸克、阿里云盘、UC、123 云盘等网页用扩展选择文件">扩展选文件</li>
-    <li title="关联 PikPak 后可离线中转">PikPak 离线</li>
-    <li>网页音视频</li><li>Pixabay</li><li>爱给</li>
-    <li title="通过扩展查找网页提供的 VTT、SRT 等字幕文件">字幕文件</li>
-    <li>轻雀文档</li><li>飞书文档</li><li>ed2k</li>
+    <li>直链</li>
+    <li data-tip="下载不动时，右键任务优先选「交给迅雷」，也可用「交给云盘」离线下载。">磁力</li>
+    <li data-tip="下载不动时，右键任务优先选「交给迅雷」，也可用「交给云盘」离线下载。">种子</li>
+    <li data-tip="支持合集选集和可用字幕">哔哩哔哩</li>
+    <li lang="en" data-tip="支持合集选集和可用字幕">YouTube</li>
+    <li lang="en">Vimeo</li><li lang="en">Facebook</li><li lang="en">Instagram</li><li lang="en">X</li><li>抖音</li>
+    <li>小红书</li><li data-tip="在微信视频号点分享按钮，再选择复制链接">微信视频号</li><li>快手</li><li>微博</li><li>新片场</li>
+    <li lang="en">GitHub</li><li lang="en">Hugging Face</li>
+    <li data-tip="在新建下载中粘贴百度网盘分享链接，可选择分享中的文件下载。">百度分享</li>
+    <li data-tip="支持百度网盘、夸克、阿里云盘、UC、123 云盘、迅雷、光鸭、天翼、移动。各网盘支持的操作及下载能力有差异，可查看网页内的「闪电下载」或扩展里的选文件入口，随时可能发生变化，不保证稳定性，速度受会员影响。">各种网盘</li>
+    <li data-tip="关联 PikPak 后可离线中转">PikPak 离线</li>
+    <li>网页音视频</li><li lang="en">Pixabay</li><li>爱给</li>
+    <li data-tip="通过扩展查找网页提供的 VTT、SRT 等字幕文件">字幕文件</li>
+    <li>轻雀文档</li><li>飞书文档</li><li lang="en">ed2k</li>
   </ul>
 </section>`;
 }
@@ -2496,17 +2499,24 @@ let pendingLinks = [];
 
 /// 开着的独立窗口：label → 类型。还在这里就关了的，算用户取消
 const openDialogs = new Map();
+const browserHandoffDialogs = new Map();
+
+function cancelBrowserHandoff(id) {
+  if (id) invoke?.("cancel_browser_handoff", { id }).catch(() => {});
+}
 
 async function openDialog(kind, payload) {
   try {
     const label = await invoke("open_dialog", { kind, payload });
     openDialogs.set(label, kind);
-    if (pushOpening && kind === "confirm" && !payload.opts?.collection) {
+    if (payload.opts?.browserHandoffId) browserHandoffDialogs.set(label, payload.opts.browserHandoffId);
+    if (pushOpening && kind === "confirm" && !payload.opts?.collection && !payload.opts?.browserHandoffId) {
       pushDialog = label;
       pushOpening = false;
     }
     return label;
   } catch (e) {
+    cancelBrowserHandoff(payload.opts?.browserHandoffId);
     toast(String(e));
     if (kind === "new") pendingLinks = [];
     else nextPending();
@@ -2619,6 +2629,7 @@ if (!DIALOG && window.__TAURI__?.event?.listen) {
   window.__TAURI__.event.listen("reveal-task",({payload})=>{refreshTasks().then(()=>revealTask(payload.id));});
   window.__TAURI__.event.listen("dialog-submit", ({ payload: { label, result } }) => {
     openDialogs.delete(label);
+    browserHandoffDialogs.delete(label);
     if ("feishuId" in result) {
       switchView("all");
       refreshTasks().then(() => { if (result.feishuId) revealTask(result.feishuId); });
@@ -2656,6 +2667,8 @@ if (!DIALOG && window.__TAURI__?.event?.listen) {
     }
   });
   window.__TAURI__.event.listen("dialog-closed", ({ payload: label }) => {
+    cancelBrowserHandoff(browserHandoffDialogs.get(label));
+    browserHandoffDialogs.delete(label);
     const kind = openDialogs.get(label);
     if (!openDialogs.delete(label)) return;
     if (kind === "substyle") return;
@@ -3886,6 +3899,7 @@ $("files-audio-mode").addEventListener("click", (event) => {
   const menu = ctxEl();
   menu.replaceChildren();
   menu.dataset.owner = "drawer-files";
+  menu.classList.add("audio-mode-menu");
   control.setAttribute("aria-expanded", "true");
   control.setAttribute("aria-controls", menu.id);
   for (const [mode, [label, icon]] of DRAWER_AUDIO_MODES) {
@@ -4080,6 +4094,10 @@ async function panGuide(url) {
 async function submitLink(url, opts = {}) {
   url = String(url || "").trim();
   if (!url || !invoke) return;
+  if (/^https?:\/\/(?:www\.)?github\.com\/(?:settings\/|two-factor\/)(?:[^/?#]+\/)*recovery[_-]download\/?(?:[?#]|$)/i.test(url)) {
+    toast("请在 GitHub 的恢复码页面点击 Download，让浏览器保存恢复码。");
+    return nextPending();
+  }
   if (WECHAT_SHARE.test(url)) return wechatGuide(url);
   if (isFeishuDocument(url)) return askConfirm(url, opts);
   if (BAIDU_SHARE.test(url) || /baidu\.com\//i.test(url)) {
@@ -4154,7 +4172,10 @@ async function doAdd(url, name, dir, video, headers, extra = {}) {
   // 贴链接时查过一次了；确认框里可能换了保存目录，那个目录里也可能已有这个文件
   if (!force && !(extra.duplicateChecked && extra.duplicateUrl === url && extra.duplicateDir === dir)) {
     const answer = await askDuplicate(url, dir);
-    if (!answer) return;
+    if (!answer) {
+      cancelBrowserHandoff(extra.browserHandoffId);
+      return;
+    }
     force = !!answer.force;
   }
   if (extra.nasRedownload && extra.originDir && extra.originId) {
@@ -4182,7 +4203,7 @@ async function doAdd(url, name, dir, video, headers, extra = {}) {
     } else {
       if (extra.btName) await invoke("name_hint", { url, name: extra.btName }).catch(() => {});
       const options = video && extra.nasRedownload ? { ...video, confirmCollision: !extra.allowRenaming } : video;
-      newId = await invoke("add_task", { url, name: name || null, dir: dir || null, video: options || null, headers: headers || null, forceNew: force, selectFiles: extra.select || null });
+      newId = await invoke("add_task", { url, name: name || null, dir: dir || null, video: options || null, headers: headers || null, forceNew: force, selectFiles: extra.select || null, browserHandoffId: extra.browserHandoffId || null });
     }
     // 空 id：保存目录里有同名，后端没建任务，正在问用户
     if (!newId) {
@@ -4563,6 +4584,7 @@ async function askConfirm(url, opts = {}, info) {
     ? `新建下载（${batch.length} 个）`
     : opts.baiduRetryId ? (opts.baiduCodeRequired ? "填写提取码" : "继续下载")
     : opts.recycleId || opts.trashHere ? "重新下载（旧文件会移到回收站）" : "新建下载";
+  $("cf-cancel").textContent = opts.browserHandoffId ? "用浏览器下载" : "取消";
   // 一个名字没法给多条用
   $("cf-name").closest(".set-row").hidden = !!batch || collection;
   $("cf-files").hidden = true;
@@ -5148,6 +5170,7 @@ async function probeCfSubs() {
 /// 关掉确认框。drain=false 用在 #cf-ok：确认那条路要等 doAdd 做完再接排队的下一条，
 /// 在这儿接会抢跑；取消（按钮/遮罩/Esc）才顺手在这儿接
 function closeConfirm(drain = true) {
+  if (drain) cancelBrowserHandoff(cf?.extra?.browserHandoffId);
   $("cf-dir-menu").hidden = true;
   if (cf?.extra?.baiduShare) {
     cf.baiduCancelled = true;
@@ -7066,7 +7089,9 @@ async function copyTaskPath(task) {
   const members = groupMembers(group.id);
   const member = members.find(item => item.status === "done" && !item.missing) || members[0];
   if (!member) return group.dir || "";
-  return invoke("task_folder_path", { id: member.id }).catch(() => group.dir || "");
+  return (member.id.startsWith("nas:")
+    ? nativeInvoke("nas_item_path", { id: member.id, folder: true })
+    : invoke("task_folder_path", { id: member.id })).catch(() => group.dir || "");
 }
 
 async function taskAction(id, act) {
@@ -7774,6 +7799,7 @@ function closeCtx() {
   if (!menu) return;
   if (menu.dataset.owner === "drawer-files") $("files-audio-mode").setAttribute("aria-expanded", "false");
   menu.hidden = true;
+  menu.classList.remove("audio-mode-menu");
   if(cloudContextMenu?.menu===menu)cloudContextMenu=null;
   delete menu.dataset.owner;
 }
@@ -8238,6 +8264,11 @@ if (!DIALOG && window.__TAURI__?.event?.listen) {
     // 网盘助手推文件夹是一个文件一次请求：攒一小会儿，合成一个确认框
     const size = Number.isSafeInteger(p.sizeBytes) && p.sizeBytes >= 0 ? p.sizeBytes : undefined;
     const sizeLabel = typeof p.sizeLabel === "string" && /^\d+(?:\.\d+)? [KMGT]?B$/.test(p.sizeLabel) ? p.sizeLabel : "";
+    if (p.browserHandoffId) {
+      pendingLinks.push({ url, opts: { name: p.name || "", headers: p.headers, size, sizeLabel, browserHandoffId: p.browserHandoffId } });
+      if (!openDialogs.size) return nextPending();
+      return;
+    }
     extBuffer.push({ url, name: p.name || "", headers: Array.isArray(p.headers) ? p.headers : null, size, sizeLabel });
     clearTimeout(extTimer);
     if (p.group) extTimer = setTimeout(flushExtBuffer, 1500);
@@ -8245,6 +8276,10 @@ if (!DIALOG && window.__TAURI__?.event?.listen) {
   });
 
   window.__TAURI__.event.listen("ext-grab", ({ payload }) => openGrab(payload?.links || [], payload || {}));
+  window.__TAURI__.event.listen("browser-handoff-retry", ({ payload }) => {
+    toast(payload ? "原下载无法继续，请回网页再点下载，下一次会由浏览器保存。"
+      : "原下载无法继续，请暂时关闭扩展的接管下载，再回网页重新下载。");
+  });
 
   // 更新进度由后端推过来：下载带百分比，安装不带
   window.__TAURI__.event.listen("update-progress", ({ payload }) => {
@@ -8549,6 +8584,11 @@ $("task-list").addEventListener("contextmenu", (e) => {
 
 // 干掉 WebView2 默认右键菜单（共享/打印那些用不上）；输入框里放行，复制粘贴还要用
 document.addEventListener("contextmenu", (e) => {
+  if (e.target.closest("#accent-row, #acc-pop")) {
+    e.preventDefault();
+    closeCtx();
+    return;
+  }
   const tag = e.target.tagName;
   if (tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable) return;
   // 设置页只给「复制」这一项：WebView2 原生菜单里的剪切、粘贴、全选在这儿都用不上，
@@ -8733,9 +8773,8 @@ winCur?.onResized?.(() => refreshMaxIcon());
 const ACCENT_KEY = "sd.accent";
 
 /// #rrggbb → 色相/饱和度（亮度由主题决定，不用存）
-/// 深色主题里强调色固定 52% 亮度，靠这判断该配白字还是近黑字
-function needsDarkText(h, s) {
-  const l = 0.52;
+/// 根据强调色亮度决定使用白字还是近黑字。
+function needsDarkText(h, s, l) {
   const c = (1 - Math.abs(2 * l - 1)) * (s / 100);
   const hp = h / 60;
   const x = c * (1 - Math.abs((hp % 2) - 1));
@@ -8752,30 +8791,34 @@ function needsDarkText(h, s) {
 }
 
 /// 换色：预设只改 html 上的 data-accent；自定义则把 h/s 写成内联变量
-function applyAccent(name, hs) {
+function applyAccent(name, hex) {
   const root = document.documentElement;
   const dot = $("acc-custom-btn");
-  if (name === "custom" && hs) {
-    const { h, s } = hs;
-    const onDark = needsDarkText(h, s) ? "#1a1400" : "#fff";
+  const hsl = name === "custom" && hexToHsl(hex);
+  if (hsl) {
+    const { h, s } = hsl;
+    const onDark = needsDarkText(h, s, hsl.l / 100) ? "#1a1400" : "#fff";
     root.style.setProperty("--accent-h", String(h));
     root.style.setProperty("--accent-s", `${s}%`);
     root.style.setProperty("--on-dark", onDark);
     root.dataset.accent = "custom";
-    if (dot) dot.style.background = `hsl(${h} ${s}% 55%)`;
+    root.style.setProperty("--accent-color", hex);
+    if (dot) {
+      dot.style.background = hex;
+      dot.classList.add("has-color");
+    }
     try {
       localStorage.setItem(ACCENT_KEY, "custom");
-      localStorage.setItem("sd.accentVars", JSON.stringify({ h: String(h), s: `${s}%`, onDark }));
+      localStorage.setItem("sd.accentVars", JSON.stringify({ h: String(h), s: `${s}%`, onDark, hex }));
     } catch (e) {}
   } else {
     root.style.removeProperty("--accent-h");
     root.style.removeProperty("--accent-s");
     root.style.removeProperty("--on-dark");
     root.dataset.accent = name || "amber";
-    if (dot) dot.style.removeProperty("background");
+    root.style.removeProperty("--accent-color");
     try {
       localStorage.setItem(ACCENT_KEY, name);
-      localStorage.removeItem("sd.accentVars");
     } catch (e) {}
   }
   document.querySelectorAll("#accent-row .acc").forEach((b) => {
@@ -8786,8 +8829,8 @@ function applyAccent(name, hs) {
 
 // ---------- 自定义取色面板（左边 饱和度/亮度 方块，右边 竖直色相条） ----------
 const PRESET_HS = {
-  amber: [37, 82], blue: [212, 92], teal: [178, 62], green: [148, 60],
-  purple: [266, 70], rose: [342, 76], indigo: [232, 62], graphite: [220, 8],
+  amber: [37, 82], blue: [212, 92], cobalt: [229.85, 82.04],
+  indigo: [232, 62], graphite: [220, 8],
 };
 let accH = 37;   // 色相 0-360
 let accS = 82;   // 饱和度 0-100
@@ -8889,14 +8932,8 @@ function hslToHex(h, sat, l) {
   return `#${to(r)}${to(g)}${to(b)}`;
 }
 
-/// 面板当前代表哪个颜色。强调色不接受任意亮度（整套配色是按 52% 亮度调的），
-/// 所以那个场景下显示的是实际生效的颜色，免得给的色值和界面对不上
 function pickerHex() {
-  if (accTarget && accLockHex) return accLockHex;
-  const raw = hsbToHex(accH, accS, accV);
-  if (accTarget) return raw;
-  const hsl = hexToHsl(raw);
-  return hsl ? hslToHex(hsl.h, hsl.s, 52) : raw;
+  return accLockHex || hsbToHex(accH, accS, accV);
 }
 
 /// 圆点、色相条游标、色块、十六进制值都跟着当前 H/S/V 走
@@ -8924,8 +8961,7 @@ function commitPicker() {
     accTarget(hex);
     return;
   }
-  const hsl = hexToHsl(hex);
-  if (hsl) applyAccent("custom", { h: hsl.h, s: hsl.s });
+  applyAccent("custom", hex);
 }
 
 /// 色区里按下/拖动：横轴饱和度、纵轴亮度
@@ -8958,12 +8994,13 @@ function openPicker(anchor, hex, cb) {
   const root = document.documentElement;
   accTarget = cb || null;
   accAnchor = anchor || null;
-  accLockHex = "";
-  const parsed = hex ? hexToHsb(hex) : null;
+  const initial = hex || (!cb && (savedCustomAccent() || getComputedStyle(root).getPropertyValue("--accent-color").trim()));
+  const parsed = hexToHsb(initial);
+  accLockHex = parsed ? initial : "";
   if (parsed) {
     accH = parsed.h;
     accS = parsed.s;
-    accV = Math.max(6, parsed.v);
+    accV = parsed.v;
   } else {
     const cur = root.dataset.accent;
     if (cur === "custom") {
@@ -8991,7 +9028,6 @@ function openPicker(anchor, hex, cb) {
     pop.style.left = `${Math.round(Math.max(8, left))}px`;
     pop.style.top = `${Math.round(top)}px`;
   }
-  if (!cb) commitPicker();
 }
 
 function closePicker() {
@@ -9002,8 +9038,11 @@ function closePicker() {
 
 $("acc-custom-btn")?.addEventListener("click", (e) => {
   e.stopPropagation();
-  if ($("acc-pop").hidden) openPicker($("acc-custom-btn"), null, null);
-  else closePicker();
+  if ($("acc-pop").hidden) {
+    const hex = savedCustomAccent();
+    if (hex) applyAccent("custom", hex);
+    openPicker($("acc-custom-btn"), hex, null);
+  } else closePicker();
 });
 
 // 色区和色相条：按下开始拖，抬起结束；拖动全程即时生效
@@ -9037,32 +9076,36 @@ function applyHexInput() {
     box.value = pickerHex().toUpperCase(); // 打错了就退回当前色，不弹窗打断
     return false;
   }
+  if (v === pickerHex().toUpperCase()) return true;
   accH = hsb.h;
   accS = hsb.s;
-  accV = Math.max(0, hsb.v);
-  // 手敲的字幕色原样保留（转 HSB 再转回来会掉一两级）；强调色那边的亮度是固定的，
-  // 显示实际生效的那个颜色，所以只在字幕色这种场景锁值
-  accLockHex = accTarget ? v : "";
-  paintPicker();
-  // 强调色的亮度固定，pickerHex() 给的是实际生效的颜色，写回去免得显示和生效不一致；
-  // 字幕颜色则原样保留用户敲的值
-  box.value = pickerHex().toUpperCase();
-  // 边敲边生效：强调色的圆点、字幕着色的色点都要立刻跟着变，
-  // 不能等回车或失焦（以前这里只画了面板，外面那圈点还是旧颜色）
+  accV = hsb.v;
+  accLockHex = v;
   commitPicker();
   return true;
 }
 
-// 吸管：系统取色，取到的值和手敲的一样原样用
-if (window.EyeDropper && $("acc-drop")) {
-  $("acc-drop").hidden = false;
-  $("acc-drop").addEventListener("click", async (e) => {
+// WebView2 的宿主窗口使用 Windows 屏幕取色，浏览器预览沿用 EyeDropper。
+if ((invoke || window.EyeDropper) && $("acc-drop")) {
+  const drop = $("acc-drop");
+  drop.hidden = false;
+  drop.addEventListener("click", async (e) => {
     e.stopPropagation();
+    if (drop.disabled) return;
+    const anchor = accAnchor;
+    const target = accTarget;
+    drop.disabled = true;
     try {
-      const { sRGBHex } = await new EyeDropper().open();
-      $("acc-hex").value = sRGBHex.toUpperCase();
+      if (invoke) toast("点击目标颜色取色，按 Esc 取消");
+      const hex = invoke ? await invoke("pick_screen_color") : (await new EyeDropper().open()).sRGBHex;
+      if (!hex || $("acc-pop").hidden || accAnchor !== anchor || accTarget !== target) return;
+      $("acc-hex").value = hex.toUpperCase();
       applyHexInput();
-    } catch {} // 按 Esc 取消
+    } catch (error) {
+      if (error?.name !== "AbortError") toast("取色失败，请重试");
+    } finally {
+      drop.disabled = false;
+    }
   });
 }
 
@@ -9097,8 +9140,8 @@ $("acc-hex")?.addEventListener("blur", () => {
 
 // 点面板内部不收起；点外面收起；Esc 也收起
 $("acc-pop")?.addEventListener("pointerdown", (e) => e.stopPropagation());
-document.addEventListener("pointerdown", () => {
-  if ($("acc-pop") && !$("acc-pop").hidden) closePicker();
+document.addEventListener("pointerdown", (e) => {
+  if ($("acc-pop") && !$("acc-pop").hidden && !e.target.closest?.("#acc-custom-btn")) closePicker();
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && $("acc-pop") && !$("acc-pop").hidden) {
@@ -9118,18 +9161,26 @@ $("accent-row")?.addEventListener("click", (e) => {
   invoke?.("log_ui_event", { kind: "accent", detail: b.dataset.accent, elapsedMs: performance.now() - started }).catch(() => {});
 });
 
+function savedCustomAccent() {
+  try {
+    const vars = JSON.parse(localStorage.getItem("sd.accentVars"));
+    if (hexToHsl(vars?.hex)) return vars.hex;
+    if (vars && Number.isFinite(Number(vars.h)) && Number.isFinite(parseFloat(vars.s))) {
+      return hslToHex(Number(vars.h), parseFloat(vars.s), 52);
+    }
+  } catch {}
+  return "";
+}
+
 try {
   const saved = localStorage.getItem(ACCENT_KEY) || "amber";
-  const vars = localStorage.getItem("sd.accentVars");
-  if (saved === "custom" && vars) {
-    const v = JSON.parse(vars);
-    accH = Number(v.h) || 36;
-    accS = parseInt(v.s, 10) || 100;
-    applyAccent("custom", { h: accH, s: accS });
-  } else {
-    applyAccent(saved);
+  const custom = savedCustomAccent();
+  if (custom && $("acc-custom-btn")) {
+    $("acc-custom-btn").style.background = custom;
+    $("acc-custom-btn").classList.add("has-color");
   }
-} catch (e) {}
+  applyAccent(saved === "custom" && !custom ? "amber" : saved, custom);
+} catch {}
 
 // ---------- 清空下载历史（只在「下载历史」页出现） ----------
 $("clear-trash-btn")?.addEventListener("click", async () => {
@@ -9899,10 +9950,14 @@ $("btn-report-issue")?.addEventListener("click", async () => {
   try {
     const report = await feedbackInfo();
     const issue = new URL(aboutRepositoryUrl + "/issues/new");
-    issue.searchParams.set("template", "windows-bug.yml");
-    const version = $("about-ver").textContent.trim();
-    if (/^v?\d+\.\d+\.\d+$/.test(version)) issue.searchParams.set("version", version.replace(/^v/, ""));
-    issue.searchParams.set("diagnostics", report);
+    if ($("nav-nas")) {
+      issue.searchParams.set("body", `### 问题描述\n\n### 复现步骤\n1. \n\n### 预期与实际结果\n\n### 环境信息\n${report}\n### 日志或截图\n复现后请在「设置 → 关于 → 问题反馈」导出脱敏日志并附上生成的 .txt 文件。\n`);
+    } else {
+      issue.searchParams.set("template", "windows-bug.yml");
+      const version = $("about-ver").textContent.trim();
+      if (/^v?\d+\.\d+\.\d+$/.test(version)) issue.searchParams.set("version", version.replace(/^v/, ""));
+      issue.searchParams.set("diagnostics", report);
+    }
     await invoke("open_url", { url: issue.toString() });
   } catch (e) { toast(String(e)); }
 });

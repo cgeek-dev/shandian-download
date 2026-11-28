@@ -70,25 +70,37 @@ fn version(text: &str) -> Option<[u32; 3]> {
     values.next().is_none().then_some(result)
 }
 
-fn setup_name(version: &str) -> String {
-    format!("Shandian-{version}-Windows-x64-setup.exe")
+fn setup_name(version: &str, edition: &str) -> String {
+    let suffix = if edition == "nas" { "-NAS" } else { "" };
+    format!("Shandian-{version}-Windows{suffix}-x64-setup.exe")
 }
-fn tag(version: &str) -> String {
-    format!("v{version}-windows")
+
+fn tag(version: &str, edition: &str) -> String {
+    if edition == "nas" {
+        format!("v{version}-windows-nas")
+    } else {
+        format!("v{version}-windows")
+    }
 }
+
 fn github_asset(tag: &str, filename: &str) -> String {
     format!("https://github.com/{REPO}/releases/download/{tag}/{filename}")
 }
 
-fn checked(release: &Release) -> bool {
+fn checked(release: &Release, edition: &str) -> bool {
     version(&release.version).is_some()
-        && release.file == setup_name(&release.version)
+        && release.file == setup_name(&release.version, edition)
         && release.sha256.len() == 64
         && release.sha256.bytes().all(|c| c.is_ascii_hexdigit())
         && (1..=MAX_INSTALLER).contains(&release.bytes)
 }
 
-fn candidates(feed: &Value) -> Vec<(String, Value)> {
+fn candidates(feed: &Value, edition: &str) -> Vec<(String, Value)> {
+    let suffix = if edition == "nas" {
+        "-windows-nas"
+    } else {
+        "-windows"
+    };
     let mut result = Vec::new();
     for entry in feed.as_array().into_iter().flatten() {
         if entry["draft"].as_bool() != Some(false) || entry["prerelease"].as_bool() != Some(false) {
@@ -97,16 +109,17 @@ fn candidates(feed: &Value) -> Vec<(String, Value)> {
         let Some(tag) = entry["tag_name"].as_str() else {
             continue;
         };
-        let Some(raw) = tag
-            .strip_prefix('v')
-            .and_then(|v| v.strip_suffix("-windows"))
-        else {
+        let Some(raw) = tag.strip_prefix('v').and_then(|v| v.strip_suffix(suffix)) else {
             continue;
         };
         if version(raw) <= version(CURRENT) {
             continue;
         }
-        let file = setup_name(raw);
+        let file = if edition == "nas" {
+            record_name(raw, edition)
+        } else {
+            setup_name(raw, edition)
+        };
         if let Some(asset) = entry["assets"]
             .as_array()
             .into_iter()
@@ -127,7 +140,7 @@ fn plain_release(raw: String, asset: &Value) -> Option<Release> {
         sha256: asset["digest"].as_str()?.strip_prefix("sha256:")?.into(),
         bytes: asset["size"].as_u64()?,
     };
-    checked(&release).then_some(release)
+    checked(&release, "plain").then_some(release)
 }
 
 fn response_body(response: Response, limit: u64) -> Result<Vec<u8>, String> {
@@ -147,12 +160,17 @@ fn json_body<T: serde::de::DeserializeOwned>(response: Response, limit: u64) -> 
         .map_err(|_| "更新信息格式不正确".into())
 }
 
-fn client(url: &str) -> Result<Client, String> {
+fn client(url: &str, private: bool) -> Result<Client, String> {
     let mut builder = Client::builder()
         .user_agent("shandian-windows-update")
         .connect_timeout(Duration::from_secs(8))
-        .timeout(Duration::from_secs(15 * 60))
-        .redirect(reqwest::redirect::Policy::custom(|attempt| {
+        .timeout(Duration::from_secs(15 * 60));
+    if private {
+        builder = builder
+            .no_proxy()
+            .redirect(reqwest::redirect::Policy::none());
+    } else {
+        builder = builder.redirect(reqwest::redirect::Policy::custom(|attempt| {
             let url = attempt.url();
             if attempt.previous().len() < 5
                 && url.scheme() == "https"
@@ -170,21 +188,29 @@ fn client(url: &str) -> Result<Client, String> {
                 attempt.stop()
             }
         }));
-    if let Some(proxy) = crate::proxy::url_for(url).and_then(|url| reqwest::Proxy::all(url).ok()) {
-        builder = builder.proxy(proxy);
+        if let Some(proxy) =
+            crate::proxy::url_for(url).and_then(|url| reqwest::Proxy::all(url).ok())
+        {
+            builder = builder.proxy(proxy);
+        }
     }
     builder.build().map_err(|_| "无法建立更新连接".into())
 }
 
-fn record_name(version: &str) -> String {
-    setup_name(version).replace("-setup.exe", "-update.json")
+fn record_name(version: &str, edition: &str) -> String {
+    setup_name(version, edition).replace("-setup.exe", "-update.json")
 }
 
-fn atom_versions(body: &[u8]) -> Result<Vec<String>, String> {
+fn atom_versions(body: &[u8], edition: &str) -> Result<Vec<String>, String> {
     use quick_xml::events::Event;
 
     let mut reader = quick_xml::Reader::from_reader(body);
     let prefix = format!("https://github.com/{REPO}/releases/tag/v");
+    let suffix = if edition == "nas" {
+        "-windows-nas"
+    } else {
+        "-windows"
+    };
     let mut entry = false;
     let mut closed_feed = false;
     let mut versions = Vec::new();
@@ -205,7 +231,7 @@ fn atom_versions(body: &[u8]) -> Result<Vec<String>, String> {
                         };
                         let Some(raw) = href
                             .strip_prefix(&prefix)
-                            .and_then(|v| v.strip_suffix("-windows"))
+                            .and_then(|v| v.strip_suffix(suffix))
                         else {
                             continue;
                         };
@@ -235,9 +261,9 @@ fn atom_versions(body: &[u8]) -> Result<Vec<String>, String> {
 
 // A release record is explicitly published for stable clients. The Atom list
 // alone does not identify prereleases or carry the installer SHA-256.
-fn fetch_record(raw: &str) -> Result<Option<Release>, String> {
-    let url = github_asset(&tag(raw), &record_name(raw));
-    let response = client(&url)?
+fn fetch_record(raw: &str, edition: &str) -> Result<Option<Release>, String> {
+    let url = github_asset(&tag(raw, edition), &record_name(raw, edition));
+    let response = client(&url, false)?
         .get(url)
         .timeout(Duration::from_secs(18))
         .send()
@@ -249,14 +275,14 @@ fn fetch_record(raw: &str) -> Result<Option<Release>, String> {
         return Err("更新校验信息暂不可用".into());
     }
     let release: Release = json_body(response, 16 * 1024)?;
-    if release.version != raw || !checked(&release) {
+    if release.version != raw || !checked(&release, edition) {
         return Err("发布的更新校验信息与安装包不一致".into());
     }
     Ok(Some(release))
 }
 
 fn fetch_from_atom() -> Result<Option<Release>, String> {
-    let response = client(ATOM_FEED)?
+    let response = client(ATOM_FEED, false)?
         .get(ATOM_FEED)
         .timeout(Duration::from_secs(18))
         .send()
@@ -264,9 +290,9 @@ fn fetch_from_atom() -> Result<Option<Release>, String> {
     if !response.status().is_success() {
         return Err("备用发布列表暂不可用".into());
     }
-    let versions = atom_versions(&response_body(response, 4 * 1024 * 1024)?)?;
+    let versions = atom_versions(&response_body(response, 4 * 1024 * 1024)?, EDITION)?;
     for raw in &versions {
-        if let Some(release) = fetch_record(raw)? {
+        if let Some(release) = fetch_record(raw, EDITION)? {
             return Ok(Some(release));
         }
     }
@@ -295,7 +321,9 @@ fn fetch_latest() -> Result<Option<Release>, String> {
         return fetch_from_atom()
             .map_err(|error| format!("GitHub 暂时限制更新查询。{error}，请稍后再试"));
     }
-    let request = client(FEED)?.get(FEED).timeout(Duration::from_secs(18));
+    let request = client(FEED, false)?
+        .get(FEED)
+        .timeout(Duration::from_secs(18));
     let res = request.send().map_err(|_| "连不上更新服务器，请稍后重试")?;
     if matches!(res.status().as_u16(), 403 | 429) {
         API_RETRY_AT.store(retry_after(res.headers(), now()), Ordering::Relaxed);
@@ -309,9 +337,17 @@ fn fetch_latest() -> Result<Option<Release>, String> {
     if !feed.is_array() {
         return Err("更新服务器返回的列表无法识别".into());
     }
-    Ok(candidates(&feed)
-        .into_iter()
-        .find_map(|(raw, asset)| plain_release(raw, &asset)))
+    for (raw, asset) in candidates(&feed, EDITION) {
+        let release = if EDITION == "plain" {
+            plain_release(raw, &asset)
+        } else {
+            fetch_record(&raw, EDITION)?
+        };
+        if release.is_some() {
+            return Ok(release);
+        }
+    }
+    Ok(None)
 }
 
 fn cache_path(base: &Path) -> PathBuf {
@@ -365,6 +401,11 @@ fn saved_dir() -> Result<PathBuf, String> {
     Err("当前运行的是便携版或未登记的版本，请手动下载新版".into())
 }
 
+fn availability(_local: &Path) -> Result<(), String> {
+    saved_dir()?;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn update_check(
     force: bool,
@@ -385,11 +426,10 @@ pub async fn update_check(
         .map_err(|_| "检查更新未完成")??;
     cache.checked_at = now();
     cache.checked_for = Some(CURRENT.into());
-    let release = cache
-        .latest
-        .as_ref()
-        .filter(|release| checked(release) && version(&release.version) > version(CURRENT));
-    let availability_message = release.and_then(|_| saved_dir().err());
+    let release = cache.latest.as_ref().filter(|release| {
+        checked(release, EDITION) && version(&release.version) > version(CURRENT)
+    });
+    let availability_message = release.and_then(|_| availability(&state.local).err());
     let result = release.map(|release| {
         let message = availability_message;
         let can_install = message.is_none();
@@ -420,9 +460,9 @@ fn sha256(path: &Path) -> Option<String> {
     Some(format!("{:x}", hash.finalize()))
 }
 
-fn request_installer(release: &Release) -> Result<Response, String> {
-    let url = github_asset(&tag(&release.version), &release.file);
-    client(&url)?
+fn request_installer(_local: &Path, release: &Release) -> Result<Response, String> {
+    let url = github_asset(&tag(&release.version, EDITION), &release.file);
+    client(&url, false)?
         .get(url)
         .send()
         .map_err(|_| "无法下载更新包，请稍后重试".into())
@@ -435,9 +475,12 @@ fn install(
     expected: &str,
 ) -> Result<std::process::Child, String> {
     let dir = saved_dir()?;
+    availability(local)?;
     let release = load(base)
         .latest
-        .filter(|r| r.version == expected && checked(r) && version(&r.version) > version(CURRENT))
+        .filter(|r| {
+            r.version == expected && checked(r, EDITION) && version(&r.version) > version(CURRENT)
+        })
         .ok_or("更新版本已变化，请重新检查")?;
     let updates = update_dir(local);
     fs::create_dir_all(&updates).map_err(|_| "无法创建更新缓存目录")?;
@@ -454,8 +497,11 @@ fn install(
         emit("downloading", 0);
         let partial = package.with_extension("part");
         let outcome = (|| {
-            let mut response = request_installer(&release)?;
+            let mut response = request_installer(local, &release)?;
             if !response.status().is_success() {
+                if EDITION == "nas" && response.status().as_u16() == 404 {
+                    return Err("NAS 上还没有这个版本的安装包".into());
+                }
                 return Err(format!(
                     "安装包下载返回 HTTP {}",
                     response.status().as_u16()
@@ -561,7 +607,11 @@ pub fn cleanup_installers(local: PathBuf) {
         let Ok(entries) = fs::read_dir(output) else {
             return;
         };
-        let suffix = "-Windows-x64-setup.exe";
+        let suffix = if EDITION == "nas" {
+            "-Windows-NAS-x64-setup.exe"
+        } else {
+            "-Windows-x64-setup.exe"
+        };
         for entry in entries.flatten() {
             let name = entry.file_name();
             if name
@@ -646,42 +696,74 @@ mod tests {
         assert_eq!(load_version_cache(legacy, "0.2.15").checked_at, 0);
     }
 
-    #[test]
-    fn fallback_sorts_versions_and_ignores_other_channels() {
-        let body = br#"<feed xmlns="http://www.w3.org/2005/Atom">
-            <entry><link href="https://github.com/cgeek-dev/shandian-download/releases/tag/v1.1.9-windows"/></entry>
-            <entry><link href="https://github.com/cgeek-dev/shandian-download/releases/tag/v1.1.10-windows"/></entry>
-            <entry><link href="https://github.com/cgeek-dev/shandian-download/releases/tag/v2.0.0-macos"/></entry>
-            <entry><link href="https://github.com/other/shandian-download/releases/tag/v9.0.0-windows"/></entry>
-            <entry><link href="https://github.com/cgeek-dev/shandian-download/releases/tag/v9.0.0-rc-windows"/></entry>
-        </feed>"#;
-        assert_eq!(atom_versions(body).unwrap(), ["1.1.10", "1.1.9"]);
-        assert!(atom_versions(b"<feed><entry>",).is_err());
-        assert_eq!(
-            record_name("1.1.10"),
-            "Shandian-1.1.10-Windows-x64-update.json"
-        );
+    fn entry(version: &str, edition: &str, prerelease: bool, file: &str) -> Value {
+        json!({"tag_name":tag(version,edition),"draft":false,"prerelease":prerelease,
+               "assets":[{"name":file,"size":75,"digest":format!("sha256:{}", "a".repeat(64))}]})
     }
 
     #[test]
-    fn feed_rejects_portable_and_prerelease() {
-        let entry = |version: &str, file: String, prerelease: bool| {
-            json!({
-                "tag_name": tag(version), "draft": false, "prerelease": prerelease,
-                "assets": [{"name": file, "size": 75, "digest": format!("sha256:{}", "a".repeat(64))}]
-            })
-        };
+    fn selects_latest_same_edition_and_never_uses_portable_or_prerelease() {
         let feed = json!([
-            entry("1.2.3", setup_name("1.2.3"), false),
-            entry("2.1.3", setup_name("2.1.3"), true),
             entry(
-                "3.1.3",
-                "Shandian-3.1.3-Windows-x64-Portable.zip".into(),
-                false
-            )
+                "1.19.5",
+                "plain",
+                false,
+                "Shandian-1.19.5-Windows-x64-setup.exe"
+            ),
+            entry(
+                "1.40.0",
+                "nas",
+                false,
+                "Shandian-1.40.0-Windows-NAS-x64-update.json"
+            ),
+            entry(
+                "1.25.0",
+                "plain",
+                false,
+                "Shandian-1.25.0-Windows-x64-Portable.zip"
+            ),
+            entry(
+                "1.21.0",
+                "plain",
+                false,
+                "Shandian-1.21.0-Windows-x64-setup.exe"
+            ),
+            entry(
+                "1.23.0",
+                "plain",
+                true,
+                "Shandian-1.23.0-Windows-x64-setup.exe"
+            ),
+            entry(CURRENT, "plain", false, &setup_name(CURRENT, "plain"))
         ]);
-        let [(raw, asset)] = candidates(&feed).try_into().unwrap();
-        assert!(plain_release(raw, &asset).is_some());
+        let plain = candidates(&feed, "plain");
+        assert_eq!(
+            plain.iter().map(|(v, _)| v.as_str()).collect::<Vec<_>>(),
+            ["1.21.0", "1.19.5"]
+        );
+        assert_eq!(candidates(&feed, "nas")[0].0, "1.40.0");
+        let mut asset = plain[0].1.clone();
+        asset["digest"] = Value::Null;
+        assert!(plain_release("1.21.0".into(), &asset).is_none());
+    }
+
+    #[test]
+    fn fallback_sorts_versions_and_keeps_the_two_editions_separate() {
+        let body = br#"<feed xmlns="http://www.w3.org/2005/Atom">
+            <entry><link href="https://github.com/cgeek-dev/shandian-download/releases/tag/v1.1.9-windows"/></entry>
+            <entry><link href="https://github.com/cgeek-dev/shandian-download/releases/tag/v1.1.10-windows"/></entry>
+            <entry><link href="https://github.com/cgeek-dev/shandian-download/releases/tag/v1.1.10-windows"/></entry>
+            <entry><link href="https://github.com/cgeek-dev/shandian-download/releases/tag/v2.0.0-windows-nas"/></entry>
+            <entry><link href="https://github.com/other/shandian-download/releases/tag/v9.0.0-windows"/></entry>
+            <entry><link href="https://github.com/cgeek-dev/shandian-download/releases/tag/v9.0.0-rc-windows"/></entry>
+        </feed>"#;
+        assert_eq!(atom_versions(body, "plain").unwrap(), ["1.1.10", "1.1.9"]);
+        assert_eq!(atom_versions(body, "nas").unwrap(), ["2.0.0"]);
+        assert!(atom_versions(b"<feed><entry>", "plain").is_err());
+        assert_eq!(
+            record_name("1.1.10", "plain"),
+            "Shandian-1.1.10-Windows-x64-update.json"
+        );
     }
 
     #[test]
@@ -693,5 +775,22 @@ mod tests {
         assert_eq!(retry_after(&headers, 10), 1600);
         headers.insert("retry-after", "120".parse().unwrap());
         assert_eq!(retry_after(&headers, 10), 130);
+    }
+
+    #[test]
+    fn private_metadata_requires_exact_filename_version_and_hash() {
+        let mut release = Release {
+            version: "1.2.3".into(),
+            file: setup_name("1.2.3", "nas"),
+            sha256: "a".repeat(64),
+            bytes: 100,
+        };
+        assert!(checked(&release, "nas"));
+        assert!(!checked(&release, "plain"));
+        release.file = "../Shandian-1.2.3-Windows-NAS-x64-setup.exe".into();
+        assert!(!checked(&release, "nas"));
+        release.file = setup_name("1.2.3", "nas");
+        release.sha256 = "not-a-hash".into();
+        assert!(!checked(&release, "nas"));
     }
 }

@@ -92,3 +92,130 @@ pub fn legacy_frame() -> bool {
 pub fn frame_init() -> String {
     format!("window.__sdWindowFrame = '{}';", if legacy_frame() { "square" } else { "rounded" })
 }
+
+/// Capture a single left click for the screen picker on the installing thread.
+#[tauri::command]
+pub async fn pick_screen_color() -> Result<Option<String>, String> {
+    tauri::async_runtime::spawn_blocking(pick_screen_color_blocking)
+        .await
+        .map_err(|_| "取色线程未能完成".to_string())?
+}
+
+fn pick_screen_color_blocking() -> Result<Option<String>, String> {
+    use std::{cell::Cell, ptr::null_mut, sync::Mutex, thread, time::{Duration, Instant}};
+    use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_ESCAPE};
+    use windows_sys::Win32::{
+        Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM},
+        Graphics::{Dwm::DwmFlush, Gdi::{GetDC, GetPixel, GetStockObject, ReleaseDC, BLACK_BRUSH}},
+        System::LibraryLoader::GetModuleHandleW,
+        UI::WindowsAndMessaging::*,
+    };
+
+    static PICKER: Mutex<()> = Mutex::new(());
+    let _active = PICKER.try_lock().map_err(|_| "取色已在进行".to_string())?;
+    thread_local! {
+        static CLICK: Cell<Option<POINT>> = const { Cell::new(None) };
+    }
+    unsafe extern "system" fn window_proc(hwnd: HWND, msg: u32, w: WPARAM, l: LPARAM) -> LRESULT {
+        if msg == WM_LBUTTONUP {
+            let mut point = POINT { x: 0, y: 0 };
+            if GetCursorPos(&mut point) != 0 { CLICK.set(Some(point)); }
+            return 0;
+        }
+        DefWindowProcW(hwnd, msg, w, l)
+    }
+
+    // Monochrome cursor masks. The pipette tip is at (5, 26).
+    let shape = |x: i32, y: i32| {
+        let axis = x - y;
+        let across = (x + y - 31).abs();
+        (-21..=7).contains(&axis) && across <= 2
+            || (3..=8).contains(&axis) && across <= 5
+            || (8..=21).contains(&axis) && across <= 4
+    };
+    let mut and = [255u8; 128];
+    let mut xor = [0u8; 128];
+    for y in 0..32 {
+        for x in 0..32 {
+            let inside = shape(x, y);
+            let edge = !inside && (-1..=1).any(|dy| (-1..=1).any(|dx| shape(x + dx, y + dy)));
+            if inside || edge {
+                let index = (y * 4 + x / 8) as usize;
+                let bit = 0x80 >> (x % 8);
+                and[index] &= !bit;
+                if edge { xor[index] |= bit; }
+            }
+        }
+    }
+
+    let class: Vec<u16> = "ShandianScreenColorPicker\0".encode_utf16().collect();
+    let instance = unsafe { GetModuleHandleW(std::ptr::null()) };
+    let cursor = unsafe { CreateCursor(instance, 5, 26, 32, 32, and.as_ptr().cast(), xor.as_ptr().cast()) };
+    if cursor.is_null() { return Err("无法创建吸管光标".into()); }
+    let registered = unsafe {
+        RegisterClassW(&WNDCLASSW {
+            lpfnWndProc: Some(window_proc),
+            hInstance: instance,
+            hCursor: cursor,
+            hbrBackground: GetStockObject(BLACK_BRUSH),
+            lpszClassName: class.as_ptr(),
+            ..Default::default()
+        })
+    };
+    if registered == 0 {
+        unsafe { DestroyCursor(cursor); }
+        return Err("无法启动 Windows 取色".into());
+    }
+
+    let overlay = unsafe {
+        CreateWindowExW(
+            WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+            class.as_ptr(), std::ptr::null(), WS_POPUP,
+            GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN),
+            GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN),
+            null_mut(), null_mut(), instance, std::ptr::null(),
+        )
+    };
+    let point = if !overlay.is_null() && unsafe { SetLayeredWindowAttributes(overlay, 0, 1, LWA_ALPHA) } != 0 {
+        CLICK.set(None);
+        unsafe {
+            ShowWindow(overlay, SW_SHOWNOACTIVATE);
+            SetCursor(cursor);
+        }
+        let until = Instant::now() + Duration::from_secs(15);
+        let mut msg = MSG::default();
+        loop {
+            unsafe {
+                while PeekMessageW(&mut msg, overlay, 0, 0, PM_REMOVE) != 0 {
+                    DispatchMessageW(&msg);
+                }
+            }
+            if let Some(point) = CLICK.get() { break Ok(Some(point)); }
+            if Instant::now() >= until || unsafe { GetAsyncKeyState(VK_ESCAPE.0.into()) } < 0 {
+                break Ok(None);
+            }
+            thread::sleep(Duration::from_millis(8));
+        }
+    } else {
+        Err("无法显示取色层")
+    };
+    unsafe {
+        if !overlay.is_null() { DestroyWindow(overlay); }
+        UnregisterClassW(class.as_ptr(), instance);
+        if GetCursor() == cursor { SetCursor(LoadCursorW(null_mut(), IDC_ARROW)); }
+        DestroyCursor(cursor);
+    }
+
+    let Some(point) = point? else { return Ok(None) };
+    let color = unsafe {
+        // Let the compositor remove the picker before sampling the underlying desktop.
+        DwmFlush();
+        let dc = GetDC(null_mut());
+        if dc.is_null() { return Err("无法读取屏幕颜色".into()); }
+        let color = GetPixel(dc, point.x, point.y);
+        ReleaseDC(null_mut(), dc);
+        color
+    };
+    if color == u32::MAX { return Err("无法读取屏幕颜色".into()); }
+    Ok(Some(format!("#{:02X}{:02X}{:02X}", color & 255, (color >> 8) & 255, (color >> 16) & 255)))
+}

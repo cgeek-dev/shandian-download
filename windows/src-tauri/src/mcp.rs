@@ -265,7 +265,15 @@ async fn list(app: &AppHandle, args: List) -> Result<Value, String> {
 
 async fn control(app: &AppHandle, args: Control, pause: bool) -> Result<Value, String> {
     let id = args.id;
-    let destination = target(args.target.as_deref())?;
+    let inferred = if id.starts_with("nas:") {
+        "nas"
+    } else {
+        "local"
+    };
+    let destination = target(args.target.as_deref().or(Some(inferred)))?;
+    if destination != inferred {
+        return Err("任务 ID 与下载位置不一致，请使用查询返回的完整 ID".into());
+    }
     if id.is_empty()
         || id.ends_with(':')
         || !id

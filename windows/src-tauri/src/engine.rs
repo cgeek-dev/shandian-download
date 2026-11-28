@@ -2701,9 +2701,11 @@ pub async fn add_task(
     select_files: Option<Vec<usize>>,
     remember_dir: Option<String>,
     remember_video: Option<bool>,
+    browser_handoff_id: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
-    add_link_inner(
+    crate::download_handoff::begin(browser_handoff_id.as_deref(), &url)?;
+    let result = add_link_inner(
         &url,
         &state,
         name.as_deref().unwrap_or(""),
@@ -2715,7 +2717,9 @@ pub async fn add_task(
         remember_dir.as_deref(),
         remember_video.unwrap_or(true),
     )
-    .await
+    .await;
+    crate::download_handoff::finish(browser_handoff_id.as_deref(), &result);
+    result
 }
 
 /// 命令行/深链/剪贴板这些「不是用户点按钮」的入口走这里，
